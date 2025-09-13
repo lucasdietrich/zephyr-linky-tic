@@ -57,7 +57,8 @@ int tic_data_in(tic_t *tic, unsigned char *buf, size_t len)
 				tic->callback(TIC_STATUS_EOF, NULL, NULL);
 				tic->state = TIC_WF;
 			} else {
-				// unexpected character, stay in WAIT_DATASET
+				LOG_WRN("Unexpected char while waiting for LF: %x", chr);
+				tic_reset(tic);
 			}
 			break;
 		case TIC_LABEL:
