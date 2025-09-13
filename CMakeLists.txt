@@ -11,6 +11,7 @@ project(zephyr-link-tic)
 
 set(app_sources
     src/main.c
+    src/tic.c
 )
 
 target_include_directories(app PRIVATE include)

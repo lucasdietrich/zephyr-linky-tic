@@ -1,4 +1,11 @@
 
+config TIC_BUFFER_SIZE
+    int
+    default 512
+    help
+     Size of the buffer used to store data read from the TIC module before processing.
+     Increasing this value may help if you are experiencing data loss or delays in processing.
+
 menu "Zephyr RTOS Configuration"
 
 source "Kconfig.zephyr"
