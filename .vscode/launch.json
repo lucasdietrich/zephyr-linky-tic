@@ -1,0 +1,46 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    // qemu-system-i386
+    "configurations": [
+        {
+            "name": "Zephyr debug",
+            "type": "cortex-debug",
+            "request": "attach",
+            "executable": "${workspaceFolder}/build/zephyr/ble-linky-tic.elf",
+            "cwd": "${workspaceFolder}", 
+            "servertype": "external",
+            "device": "nrf52",
+            "gdbTarget": "localhost:2331",
+            "runToEntryPoint": "main",
+        },
+        {
+            "name": "JLink debug",
+            "type": "cortex-debug",
+            "request": "launch",
+            "executable": "${workspaceFolder}/build/zephyr/ble-linky-tic.elf",
+            "cwd": "${workspaceFolder}",
+            "interface": "swd",
+            "servertype": "jlink",
+            "device": "nrf52",
+            "serverpath": "/opt/SEGGER/JLink/JLinkGDBServerCLExe",
+            // "serialNumber": "683339521",
+            // "preLaunchTask": "Flash",
+            "runToEntryPoint": "main",
+        },
+        {
+            "name": "Remote openocd 192.168.10.154:3333",
+            "type": "cortex-debug",
+            "request": "launch",
+            "executable": "${workspaceFolder}/build/zephyr/ble-linky-tic.elf",
+            "cwd": "${workspaceFolder}",
+            "interface": "swd",
+            "servertype": "external",
+            "gdbTarget": "192.168.10.154:3333",
+            "gdbPath": "/usr/bin/gdb-multiarch",
+            "runToEntryPoint": "main",
+        }
+    ]
+}

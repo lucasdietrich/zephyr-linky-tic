@@ -1,0 +1,7 @@
+&uart1 {
+    status = "okay";
+    current-speed = <1200>;
+    parity = "even";
+    stop-bits = "1";
+    data-bits = <7>;
+};

@@ -1,0 +1,10 @@
+{
+	"cmake.sourceDirectory": "${workspaceFolder}/zephyr",
+	"cortex-debug.variableUseNaturalFormat": false,
+	"devicetree.defaultBoard": "nucleo_f429zi", /* nucleo_f429zi / mps2_an385 Default board to use for devicetree */
+	"editor.rulers": [
+		80
+	],
+	"editor.autoIndent": "full",
+	"nrf-connect.toolchain.path": "${nrf-connect.zephyrsdk:0.16.1}",
+}

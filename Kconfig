@@ -1,0 +1,6 @@
+
+menu "Zephyr RTOS Configuration"
+
+source "Kconfig.zephyr"
+
+endmenu
