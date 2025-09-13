@@ -1,5 +1,3 @@
-#include "zephyr/logging/log_core.h"
-#include "zephyr/sys/printk.h"
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 

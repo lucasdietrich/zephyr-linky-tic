@@ -5,16 +5,11 @@
  */
 
 #include "tic.h"
-#include "zephyr/device.h"
-#include "zephyr/sys/printk.h"
-#include "zephyr/sys/ring_buffer.h"
-#include "zephyr/sys/time_units.h"
-
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(linky, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #define UART_DEVICE_NODE DT_NODELABEL(uart1)
 static const struct device *const uart_dev = DEVICE_DT_GET(UART_DEVICE_NODE);
@@ -37,7 +32,6 @@ uart_callback(const struct device *dev, struct uart_event *evt, void *user_data)
 	switch (evt->type) {
 	case UART_RX_BUF_REQUEST:
 		/* Return the next buffer index */
-		LOG_DBG("Providing buffer index %d", async_rx_buffer_idx);
 		rc = uart_rx_buf_rsp(
 			dev, async_rx_buffer[async_rx_buffer_idx], sizeof(async_rx_buffer[0]));
 		__ASSERT_NO_MSG(rc == 0);
@@ -79,12 +73,12 @@ void tc_cb(tic_status_t err, const char *label, const char *data)
 	if (err == TIC_STATUS_ERR_CHECKSUM) {
 		checksum_err++;
 	} else if (err == TIC_STATUS_EOF) {
-		printk("TIC bytes: %llu, datasets: %llu, checksum errors: %llu\n",
+		LOG_DBG("TIC bytes: %llu, datasets: %llu, checksum errors: %llu",
 			   rx_bytes,
 			   rx_datasets,
 			   checksum_err);
 	} else if (err == TIC_STATUS_DATASET) {
-		printk("TIC %s:%s [%d]\n", label, data, err);
+		LOG_INF("TIC %s:%s [%d]", label, data, err);
 		rx_datasets++;
 	}
 }
@@ -93,24 +87,24 @@ int main(void)
 {
 	int ret;
 	static uint8_t buf[128];
-	LOG_INF("Linky TIC reader started\n");
+	LOG_INF("Linky TIC reader started");
 
 	if (!device_is_ready(uart_dev)) {
-		LOG_ERR("UART device not found!\n");
+		LOG_ERR("UART device not found!");
 		return 0;
 	}
 
 	struct tic tic;
 	ret = tic_init(&tic, tc_cb);
 	if (ret != 0) {
-		LOG_ERR("Failed to initialize TIC: %d\n", ret);
+		LOG_ERR("Failed to initialize TIC: %d", ret);
 		return 0;
 	}
 
 	/* Register the async interrupt handler */
 	ret = uart_callback_set(uart_dev, uart_callback, (void *)uart_dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to set UART callback: %d\n", ret);
+		LOG_ERR("Failed to set UART callback: %d", ret);
 		return 0;
 	}
 
@@ -126,9 +120,10 @@ int main(void)
 		events[1].state = K_POLL_STATE_NOT_READY;
 
 		ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
-		printk("k_poll returned: %d\n", ret);
 		if (ret == 0) {
 			if (events[0].state == K_POLL_STATE_SEM_AVAILABLE) {
+				ret = k_sem_take(&rx_data_sem, K_NO_WAIT);
+				__ASSERT(ret == 0, "Failed to take rx_data_sem");
 				uint32_t read;
 				while ((read = ring_buf_get(&uart_rx_ringbuf, buf, sizeof(buf))) > 0) {
 					rx_bytes += read;
@@ -137,7 +132,9 @@ int main(void)
 			}
 
 			if (events[1].state == K_POLL_STATE_SEM_AVAILABLE) {
-				LOG_INF("Enabling RX\n");
+				ret = k_sem_take(&rx_enable_sem, K_NO_WAIT);
+				__ASSERT(ret == 0, "Failed to take rx_enable_sem");
+				LOG_INF("Enabling RX");
 				ring_buf_reset(&uart_rx_ringbuf);
 				k_sem_reset(&rx_data_sem);
 				ret = uart_rx_enable(uart_dev,
@@ -145,7 +142,7 @@ int main(void)
 									 RX_CHUNK_LEN,
 									 SYS_FOREVER_US);
 				if (ret != 0) {
-					LOG_ERR("Failed to enable RX: %d\n", ret);
+					LOG_ERR("Failed to enable RX: %d", ret);
 				}
 			}
 		}
