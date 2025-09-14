@@ -77,7 +77,8 @@ int tic_data_in(tic_t *tic, unsigned char chr)
 			tic->label[tic->w_cursor++] = (char)chr;
 			tic->calc_checksum += chr;
 		} else {
-			LOG_WRN("Label size overflow %u > %u", tic->w_cursor, TIC_LABEL_MAX_LEN);
+			// TODO issue callback error
+			LOG_WRN("Label size overflow %u > %u", tic->w_cursor + 1u, TIC_LABEL_MAX_LEN);
 			tic_reset(tic);
 		}
 		break;
@@ -89,6 +90,7 @@ int tic_data_in(tic_t *tic, unsigned char chr)
 			tic->data[tic->w_cursor++] = (char)chr;
 			tic->calc_checksum += chr;
 		} else {
+			// TODO issue callback error
 			LOG_WRN("Data size overflow %u > %u", tic->w_cursor, TIC_DATA_MAX_LEN);
 			tic_reset(tic);
 		}
@@ -100,6 +102,7 @@ int tic_data_in(tic_t *tic, unsigned char chr)
 					tic->label,
 					tic->calc_checksum,
 					chr);
+			// TODO issue callback error
 			tic->callback(TIC_STATUS_ERR_CHECKSUM, NULL, NULL, tic->user_data);
 			tic_reset(tic);
 			break;
@@ -111,6 +114,7 @@ int tic_data_in(tic_t *tic, unsigned char chr)
 			tic->callback(TIC_STATUS_DATASET, tic->label, tic->data, tic->user_data);
 			tic->state = TIC_WD;
 		} else {
+			// TODO issue callback error
 			LOG_WRN("Unexpected EOF: %x", chr);
 			tic_reset(tic);
 		}

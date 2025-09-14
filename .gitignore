@@ -2,3 +2,5 @@ docs/html
 docs/latex
 /build
 /target
+/src/tic_demo_data.c
+/data.bin

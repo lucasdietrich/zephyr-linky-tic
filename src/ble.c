@@ -33,7 +33,7 @@
 
 LOG_MODULE_REGISTER(ble, LOG_LEVEL_DBG);
 
-#define TIC_HIST_ADV_DATA_LEN 13u
+#define TIC_HIST_ADV_DATA_LEN 11u
 #define TIC_HIST_SD_DATA_LEN  17u
 
 static uint8_t energy_meter_ad_data[2u + TIC_HIST_ADV_DATA_LEN] = { 0xff, 0xff };
@@ -61,9 +61,8 @@ static int tic_hist_ser_ad(const tic_hist_t *hist, uint8_t *adbuf, size_t buf_le
 	adbuf[0] = TIC_MODE_HISTORIQUE;
 	sys_put_le32(hist->base, &adbuf[1]);
 	sys_put_le16(hist->iinst, &adbuf[5]);
-	sys_put_le16(hist->imax, &adbuf[7]);
-	sys_put_le16(hist->ptec, &adbuf[9]);
-	sys_put_le16(hist->papp, &adbuf[11]);
+	sys_put_le16(hist->ptec, &adbuf[7]);
+	sys_put_le16(hist->papp, &adbuf[9]);
 
 	return 0;
 }
@@ -101,8 +100,16 @@ int ble_init(void)
 	params.sid				  = 0;
 	params.secondary_max_skip = 0;
 	params.options			  = BT_LE_ADV_OPT_SCANNABLE | BT_LE_ADV_OPT_NOTIFY_SCAN_REQ;
+#if defined(CONFIG_TIC_ADV_FAST1)
 	params.interval_min		  = BT_GAP_ADV_FAST_INT_MIN_1;
 	params.interval_max		  = BT_GAP_ADV_FAST_INT_MAX_1;
+#elif defined(CONFIG_TIC_ADV_FAST2)
+	params.interval_min		  = BT_GAP_ADV_FAST_INT_MIN_2;
+	params.interval_max		  = BT_GAP_ADV_FAST_INT_MAX_2;
+#else
+	params.interval_min		  = BT_GAP_ADV_SLOW_INT_MIN;
+	params.interval_max		  = BT_GAP_ADV_SLOW_INT_MAX;
+#endif
 	params.peer				  = NULL;
 
 	err = bt_le_adv_start(&params, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));

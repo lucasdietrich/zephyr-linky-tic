@@ -24,6 +24,7 @@ uint8_t async_rx_buffer[2u][RX_CHUNK_LEN];
 volatile uint8_t async_rx_buffer_idx = 0;
 RING_BUF_DECLARE(uart_rx_ringbuf, RX_RINGBUF_SIZE);
 
+#if !defined(CONFIG_TIC_DEMO_MODE)
 static void
 uart_callback(const struct device *dev, struct uart_event *evt, void *user_data)
 {
@@ -64,6 +65,7 @@ uart_callback(const struct device *dev, struct uart_event *evt, void *user_data)
 		break;
 	}
 }
+#endif
 
 struct tic_infos {
 	tic_mode_t mode;
@@ -126,12 +128,14 @@ int main(void)
 		return 0;
 	}
 
+#if !defined(CONFIG_TIC_DEMO_MODE)
 	/* Register the async interrupt handler */
 	ret = uart_callback_set(uart_dev, uart_callback, (void *)uart_dev);
 	if (ret != 0) {
 		LOG_ERR("Failed to set UART callback: %d", ret);
 		return 0;
 	}
+#endif /* !CONFIG_TIC_DEMO_MODE */
 
 #if defined(CONFIG_BT)
 	ret = ble_init();
@@ -139,7 +143,7 @@ int main(void)
 		LOG_ERR("Failed to initialize BLE: %d", ret);
 		return 0;
 	}
-#endif
+#endif /* CONFIG_BT */
 
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(
@@ -181,11 +185,6 @@ int main(void)
 				}
 			}
 		}
-
-#if defined(TIC_DEMO_MODE)
-		tic_infos.hist.base += 10;
-		ble_update_adv(&tic_infos.hist);
-#endif
 	}
 
 	return 0;

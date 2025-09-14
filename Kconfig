@@ -1,17 +1,33 @@
 
-config TIC_BUFFER_SIZE
-    int
-    default 512
-    help
-     Size of the buffer used to store data read from the TIC module before processing.
-     Increasing this value may help if you are experiencing data loss or delays in processing.
-
 config TIC_DEMO_MODE
     bool "Enable Demo Mode"
     default n
     help
      Enable demo mode for the TIC module. In demo mode, predefined data is used instead of real data from the TIC module.
      This is useful for testing and development purposes.
+
+choice TIC_ADV_INTERVAL
+    prompt "TIC BLE Advertising Interval"
+    default TIC_ADV_SLOW
+    help
+     Select the advertising interval for the TIC BLE advertisements.
+
+config TIC_ADV_FAST1
+    bool "30 - 60 ms"
+    help
+     Set the advertising interval to 30 - 60 ms.
+
+config TIC_ADV_FAST2
+    bool "100 - 150 ms"
+    help
+     Set the advertising interval to 100 - 150 ms.
+
+config TIC_ADV_SLOW
+    bool "1s - 1.2s"
+    help
+     Set the advertising interval to 1s - 1.2s.
+
+endchoice
 
 menu "Zephyr RTOS Configuration"
 

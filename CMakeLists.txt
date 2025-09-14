@@ -17,3 +17,7 @@ set(app_sources
 target_include_directories(app PRIVATE include)
 target_sources(app PRIVATE ${app_sources})
 target_sources_ifdef(CONFIG_BT app PRIVATE src/ble.c)
+target_sources_ifdef(CONFIG_TIC_DEMO_MODE app PRIVATE 
+    src/tic_demo.c
+    src/tic_demo_data.c
+)

@@ -51,3 +51,6 @@ format:
 
 clean:
 	rm -rf build
+
+demo-data:
+	xxd -i -n tic_demo_data data.bin > src/tic_demo_data.c
