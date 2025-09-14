@@ -22,6 +22,13 @@ remote_flash: build
   		-ex "quit" \
   		build/zephyr/ble-linky-tic.elf
 
+remote_reset:
+	gdb-multiarch -q -batch \
+  		-ex "target extended-remote 192.168.10.154:3333" \
+  		-ex "monitor reset halt" \
+  		-ex "monitor reset run" \
+  		-ex "quit"
+
 debug:
 	west debugserver
 

@@ -1,15 +1,16 @@
 /*
- * Copyright (c) 2024 Lucas Dietrich <ld.adecy@gmail.com>
+ * Copyright (c) 2025 Lucas Dietrich <ld.adecy@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "tic.h"
+#include "ble.h"
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 #define UART_DEVICE_NODE DT_NODELABEL(uart1)
 static const struct device *const uart_dev = DEVICE_DT_GET(UART_DEVICE_NODE);
@@ -64,22 +65,46 @@ uart_callback(const struct device *dev, struct uart_event *evt, void *user_data)
 	}
 }
 
-static uint64_t rx_bytes	 = 0;
-static uint64_t rx_datasets		 = 0u;
-static uint64_t checksum_err = 0;
+struct tic_infos {
+	tic_mode_t mode;
+	union {
+		tic_hist_t hist;
+	};
+	struct {
+		uint64_t rx_bytes;
+		uint32_t rx_datasets;
+		uint32_t checksum_err;
+	} stats;
+};
 
-void tc_cb(tic_status_t err, const char *label, const char *data)
+static struct tic_infos tic_infos = {
+	.mode = TIC_MODE_HISTORIQUE,
+};
+
+void tc_cb(tic_status_t err, const char *label, const char *data, void *user_data)
 {
 	if (err == TIC_STATUS_ERR_CHECKSUM) {
-		checksum_err++;
+		tic_infos.stats.checksum_err++;
 	} else if (err == TIC_STATUS_EOF) {
-		LOG_DBG("TIC bytes: %llu, datasets: %llu, checksum errors: %llu",
-			   rx_bytes,
-			   rx_datasets,
-			   checksum_err);
+		LOG_INF("TIC PAPP: %u W IINST: %u A (IMAX %u A ISOUSC %u) BASE %u Wh - ADCO %.12s (rx B: %llu N dt: %u C err: %u)",
+				tic_infos.hist.papp,
+				tic_infos.hist.iinst,
+				tic_infos.hist.imax,
+				tic_infos.hist.isousc,
+				tic_infos.hist.base,
+				tic_infos.hist.adco,
+				tic_infos.stats.rx_bytes,
+				tic_infos.stats.rx_datasets,
+				tic_infos.stats.checksum_err);
 	} else if (err == TIC_STATUS_DATASET) {
-		LOG_INF("TIC %s:%s [%d]", label, data, err);
-		rx_datasets++;
+		LOG_DBG("TIC %s:%s [%d]", label, data, err);
+		tic_infos.stats.rx_datasets++;
+
+		int ret = tic_hist_parse_data(&tic_infos.hist, label, data);
+		if (ret == 0) {
+			/* If value changed, update advertising data */
+			ble_update_adv(&tic_infos.hist);
+		}
 	}
 }
 
@@ -95,7 +120,7 @@ int main(void)
 	}
 
 	struct tic tic;
-	ret = tic_init(&tic, tc_cb);
+	ret = tic_init(&tic, tc_cb, (void *)&tic_infos);
 	if (ret != 0) {
 		LOG_ERR("Failed to initialize TIC: %d", ret);
 		return 0;
@@ -107,6 +132,14 @@ int main(void)
 		LOG_ERR("Failed to set UART callback: %d", ret);
 		return 0;
 	}
+
+#if defined(CONFIG_BT)
+	ret = ble_init();
+	if (ret != 0) {
+		LOG_ERR("Failed to initialize BLE: %d", ret);
+		return 0;
+	}
+#endif
 
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(
@@ -126,8 +159,10 @@ int main(void)
 				__ASSERT(ret == 0, "Failed to take rx_data_sem");
 				uint32_t read;
 				while ((read = ring_buf_get(&uart_rx_ringbuf, buf, sizeof(buf))) > 0) {
-					rx_bytes += read;
-					tic_data_in(&tic, buf, read);
+					tic_infos.stats.rx_bytes += read;
+					for (uint32_t i = 0; i < read; i++) {
+						tic_data_in(&tic, buf[i]);
+					}
 				}
 			}
 
@@ -146,6 +181,11 @@ int main(void)
 				}
 			}
 		}
+
+#if defined(TIC_DEMO_MODE)
+		tic_infos.hist.base += 10;
+		ble_update_adv(&tic_infos.hist);
+#endif
 	}
 
 	return 0;

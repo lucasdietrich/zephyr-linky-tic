@@ -6,6 +6,13 @@ config TIC_BUFFER_SIZE
      Size of the buffer used to store data read from the TIC module before processing.
      Increasing this value may help if you are experiencing data loss or delays in processing.
 
+config TIC_DEMO_MODE
+    bool "Enable Demo Mode"
+    default n
+    help
+     Enable demo mode for the TIC module. In demo mode, predefined data is used instead of real data from the TIC module.
+     This is useful for testing and development purposes.
+
 menu "Zephyr RTOS Configuration"
 
 source "Kconfig.zephyr"
