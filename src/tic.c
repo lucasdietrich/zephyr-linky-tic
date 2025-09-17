@@ -3,8 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
- 
+
 #include <stdlib.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
@@ -26,10 +27,10 @@ int tic_init(tic_t *tic, tic_callback_t callback, void *user_data)
 		return -1;
 	}
 
-	tic->state	  = TIC_WF;
-	tic->callback = callback;
+	tic->state	   = TIC_WF;
+	tic->callback  = callback;
 	tic->user_data = user_data;
-	tic->w_cursor = 0;
+	tic->w_cursor  = 0;
 
 	return 0;
 }
@@ -78,7 +79,12 @@ int tic_data_in(tic_t *tic, unsigned char chr)
 			tic->calc_checksum += chr;
 		} else {
 			// TODO issue callback error
-			LOG_WRN("Label size overflow %u > %u", tic->w_cursor + 1u, TIC_LABEL_MAX_LEN);
+			LOG_WRN("Label size overflow %u > %u, new char: %c (%x)",
+					tic->w_cursor + 1u,
+					TIC_LABEL_MAX_LEN,
+					is_printable(chr) ? (char)chr : '.',
+					chr);
+			LOG_HEXDUMP_WRN(tic->label, tic->w_cursor, "Label so far:");
 			tic_reset(tic);
 		}
 		break;
@@ -146,6 +152,20 @@ int tic_hist_parse_data(tic_hist_t *hist, const char *label, const char *data)
 		hist->imax = (uint16_t)strtoul(data, NULL, 10);
 	} else if (strncmp(label, TIC_LABEL_PAPP, TIC_LABEL_SIZE(TIC_LABEL_PAPP)) == 0) {
 		hist->papp = (uint16_t)strtoul(data, NULL, 10);
+	} else if (strncmp(label, TIC_LABEL_OPTARIF, TIC_LABEL_SIZE(TIC_LABEL_OPTARIF)) ==
+			   0) {
+		if (strcmp(data, TIC_HIST_DATA_OPTARIF_EXPECTED) != 0) {
+			return -ENOTSUP; // Unsupported OPTARIF value
+		}
+	} else if (strncmp(label, TIC_LABEL_HHPHC, TIC_LABEL_SIZE(TIC_LABEL_HHPHC)) == 0) {
+		if (strcmp(data, TIC_HIST_DATA_HHPHC_EXPECTED) != 0) {
+			return -ENOTSUP; // Unsupported HHPHC value
+		}
+	} else if (strncmp(label, TIC_LABEL_MOTDETAT, TIC_LABEL_SIZE(TIC_LABEL_MOTDETAT)) ==
+			   0) {
+		if (strcmp(data, TIC_HIST_DATA_MOTDETAT_EXPECTED) != 0) {
+			return -ENOTSUP; // Unsupported MOTDETAT value
+		}
 	} else {
 		return -ENOTSUP; // Unknown label
 	}

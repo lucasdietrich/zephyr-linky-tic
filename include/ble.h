@@ -7,8 +7,9 @@
 #ifndef _BLE_H
 #define _BLE_H
 
-#include <zephyr/kernel.h>
 #include "tic.h"
+
+#include <zephyr/kernel.h>
 
 int ble_init(void);
 

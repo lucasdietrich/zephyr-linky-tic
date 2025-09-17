@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "tic.h"
 #include "ble.h"
+#include "tic.h"
+
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -15,7 +16,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 #define UART_DEVICE_NODE DT_NODELABEL(uart1)
 static const struct device *const uart_dev = DEVICE_DT_GET(UART_DEVICE_NODE);
 
-#define RX_CHUNK_LEN 64
+#define RX_CHUNK_LEN	64
 #define RX_RINGBUF_SIZE 1024
 
 K_SEM_DEFINE(rx_enable_sem, 1, 1);
@@ -88,7 +89,8 @@ void tc_cb(tic_status_t err, const char *label, const char *data, void *user_dat
 	if (err == TIC_STATUS_ERR_CHECKSUM) {
 		tic_infos.stats.checksum_err++;
 	} else if (err == TIC_STATUS_EOF) {
-		LOG_INF("TIC PAPP: %u W IINST: %u A (IMAX %u A ISOUSC %u) BASE %u Wh - ADCO %.12s (rx B: %llu N dt: %u C err: %u)",
+		LOG_INF("TIC PAPP: %u W IINST: %u A (IMAX %u A ISOUSC %u) BASE %u Wh - ADCO "
+				"%.12s (rx B: %llu N dt: %u C err: %u)",
 				tic_infos.hist.papp,
 				tic_infos.hist.iinst,
 				tic_infos.hist.imax,
@@ -106,6 +108,8 @@ void tc_cb(tic_status_t err, const char *label, const char *data, void *user_dat
 		if (ret == 0) {
 			/* If value changed, update advertising data */
 			ble_update_adv(&tic_infos.hist);
+		} else {
+			LOG_WRN("Failed to parse TIC data %s:%s (%d)", label, data, ret);
 		}
 	}
 }

@@ -1,4 +1,5 @@
 #include "zephyr/kernel.h"
+
 #include <stddef.h>
 
 extern const unsigned char tic_demo_data[];
@@ -8,7 +9,8 @@ extern struct k_sem rx_data_sem;
 
 void tic_demo_thread(void *p1, void *p2, void *p3);
 
-K_THREAD_DEFINE(tic_demo_thread_id, 1024, tic_demo_thread, NULL, NULL, NULL, K_PRIO_PREEMPT(7), 0, 0);
+K_THREAD_DEFINE(
+	tic_demo_thread_id, 1024, tic_demo_thread, NULL, NULL, NULL, K_PRIO_PREEMPT(7), 0, 0);
 
 #define DATARATE 100
 #define SLEEP_MS 100
@@ -31,7 +33,7 @@ void tic_demo_thread(void *p1, void *p2, void *p3)
 			cursor = to_send;
 		}
 
-        k_sem_give(&rx_data_sem);
+		k_sem_give(&rx_data_sem);
 
 		k_sleep(K_MSEC(SLEEP_MS));
 	}
